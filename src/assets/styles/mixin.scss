@@ -1,0 +1,267 @@
+@charset "utf-8";
+@import './config.scss';
+@import './variables.scss';
+
+/* 
+* css预处理
+* 1. 结构化CSS
+* 2. 变量
+* 3. 嵌套样式表
+* 4. Minxins& 函数
+* 5. 继承
+*/
+//-----------------------------------------------------  
+// mixin scss
+// 包括常用的mixin，%及@function
+// mixin，通过@include调用，样式通过拷贝的方式使用，尤其适用于传递参数
+// %，通过@extend调用，样式通过组合申明的方式使用，适用于不传参数的代码片段  
+// @function，返回一个值，用于调用
+//-----------------------------------------------------
+
+// mixin & %
+// 既定义了mixin也定义了%，根据需求使用@include或@extend调用
+//-----------------------------------------------------
+$lte7:true !default;
+//是否支持某个浏览器的前缀，如果你不想支持，可以设置为false
+//----------------------------
+$prefix-for-webkit: true !default;
+$prefix-for-mozilla: true !default;
+$prefix-for-microsoft: true !default;
+$prefix-for-opera: true !default;
+$prefix-for-spec: true !default; // 标准版
+
+// prefixer
+//----------------------------
+@mixin prefixer ($property, $value, $prefixes) {
+  @each $prefix in $prefixes {
+    @if $prefix == webkit and $prefix-for-webkit == true {
+      -webkit-#{$property}: $value;
+    }
+    @else if $prefix == moz and $prefix-for-mozilla == true {
+      -moz-#{$property}: $value;
+    }
+    @else if $prefix == ms and $prefix-for-microsoft == true {
+      -ms-#{$property}: $value;
+    }
+    @else if $prefix == o and $prefix-for-opera == true {
+      -o-#{$property}: $value;
+    }
+    @else if $prefix == spec and $prefix-for-spec == true {
+      #{$property}: $value;
+    }
+    @else {
+      @warn "Unrecognized prefix: #{$prefix}";
+    }
+  }
+}
+
+//是否兼容ie6, 7
+@mixin inline-block {
+  display: inline-block;
+
+  @if $lte7 {
+    *display: inline;
+    *zoom: 1;
+  }
+
+}
+
+@mixin center-block {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+//...可以对box-shadow设置很多个值
+//webkit moz o ms 和标准
+@mixin box-shadow($shadow...) {
+  @include prefixer(box-shadow, $shadow, webkit moz o ms spec);
+}
+
+//webkit moz o ms 和标准
+@mixin box-sizing($type:border-box) {
+  // border-box | padding-box | content-box
+  @include prefixer(box-sizing, $type, webkit moz o ms spec);
+}
+
+//webkit moz o ms 和标准
+@mixin transform($property...) {
+  @include prefixer(transform, $property, webkit moz o ms spec);
+}
+
+//webkit moz o ms 和标准
+@mixin transition($property) {
+  @include prefixer(transition, $property, webkit moz o ms spec);
+}
+
+//webkit moz o ms 和标准
+@mixin text-overflow($property) {
+  @include prefixer(text-overflow, $property, webkit moz o ms spec);
+}
+
+//定义media-queries的最小最大宽度
+@mixin screen($res-min, $res-max) {
+  @media screen and (min-width:$res-min) and (max-width:$res-max) {
+    @content;
+  }
+
+}
+
+// triangle
+@mixin triangle($direction, $size, $borderColor) {
+  content: "";
+  height: 0;
+  width: 0;
+
+  @if $direction == top {
+    border-bottom: $size solid $borderColor;
+    border-left: $size dashed transparent;
+    border-right: $size dashed transparent;
+  }
+
+  @else if $direction == right {
+    border-left: $size solid $borderColor;
+    border-top: $size dashed transparent;
+    border-bottom: $size dashed transparent;
+  }
+
+  @else if $direction == bottom {
+    border-top: $size solid $borderColor;
+    border-left: $size dashed transparent;
+    border-right: $size dashed transparent;
+  }
+
+  @else if $direction == left {
+    border-right: $size solid $borderColor;
+    border-top: $size dashed transparent;
+    border-bottom: $size dashed transparent;
+  }
+
+}
+
+//定义animation的keyframes
+@mixin keyframes($animationName) {
+  @-webkit-keyframes #{$animationName} {
+    @content;
+  }
+  @-moz-keyframes #{$animationName} {
+    @content;
+  }
+  @-o-keyframes #{$animationName} {
+    @content;
+  }
+  @keyframes #{$animationName} {
+    @content;
+  }
+}
+//通过先定义@mixin，然后在%调用@mixin来实现传递变量
+@mixin float($float:left) {
+  float: $float;
+  @if $lte7 {
+    display: inline;
+  }
+}
+%float-right{
+  @include float(right);
+}
+
+/* 
+*这里有几点需要再次提醒下：
+* 首先%定义的占位选择器样式不能传递参数。当然请注意不能传递参数，不代表样式里面不能使用变量。
+* 然后@extend调用%申明的东西时，必须要把%带上，@extend %clearfix正确，而@extend clearfix是错误的调用。
+* 最后%定义的样式，如果不调用是不会产生任何样式的，这也是用%定义样式比用原先的class方法定义样式高明的一方面。
+*/
+%clearfix {
+  @if $lte7 {
+    *zoom: 1;
+  }
+  &:before,
+  &:after {
+    content: "";
+    display: table;
+    font: 0/0 a;
+  }
+  &:after {
+    clear: both;
+  }
+}
+
+@mixin scrollBar {
+  &:hover {
+    &::-webkit-scrollbar-track-piece {
+      background: #fff;
+    }
+
+    &::-webkit-scrollbar {
+      width: vw(6);
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: vw(20);
+    }
+
+  }
+
+  &::-webkit-scrollbar-track-piece {
+    background: none;
+  }
+
+  &::-webkit-scrollbar {
+    width: 0;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: none;
+    border-radius: 0;
+  }
+
+}
+
+@mixin relative {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+@mixin vertical-middle {
+  position: absolute;
+  top: 50%;
+  @include transform(translateY(-50%));
+}
+
+@mixin input-placeholder {
+  ::-webkit-input-placeholder {
+    font-size: 14px;
+    color: $color-969799 !important;
+    font-family: Microsoft YaHei, Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Arial, sans-serif;
+    font-weight: normal;
+    // line-height: 1 !important;
+  }
+
+  :-moz-placeholder {
+    font-size: 14px;
+    color: $color-969799 !important;
+  }
+
+  ::-moz-placeholder {
+    font-size: 14px;
+    color: $color-969799 !important;
+  }
+
+  :-ms-input-placeholder {
+    font-size: 14px;
+    font-family: Microsoft YaHei, Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Arial, sans-serif;
+    font-weight: normal;
+    color: $color-969799 !important;
+  }
+
+}
+
+//定义所有不支持圆角的浏览器使用背景图片
+//得使用[modernizr](http://modernizr.com/)来检测，在html上加class
+@mixin no-border-radius {
+  .no-border-radius {
+    @content
+  }
+
+}
